@@ -1,0 +1,25 @@
+# Machine-only configuration. Never force-add these exclusions.
+/.local/
+/projects/
+/workflow_baselines/
+/data/
+/dist/
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.m4a
+*.part
+*.log
+*.lock
+*.zip
+*.env
+.env*
+__pycache__/
+*.pyc
+/.venv/
+/projects.json
+/queue_state.json
+/control_token.json
+/machine_config.json
+/index.html
