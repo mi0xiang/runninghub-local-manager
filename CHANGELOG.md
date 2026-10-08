@@ -6,6 +6,7 @@
 - Load optional Lark target/field identities from the local data root; no real resource identifiers ship in public source or synthetic tests. Existing outbox requests and receipts remain unchanged.
 - Align new-plan guidance with the 15-second H3 ceiling and task-specific reference counts; distinguish the manual read-only dashboard from legacy web/queue capabilities.
 - Keep machine configuration and production data outside Git. See docs/supervision-v02.md for the Lark binding migration.
+- Install FFmpeg/FFprobe in Windows CI and use an isolated test configuration so real synthetic-media regression tests run on clean hosted runners.
 
 ## 2026-10-08 — Per-video analysis consultation
 
