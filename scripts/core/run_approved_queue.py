@@ -9,7 +9,8 @@ from api_policy import retryable,rejected,WAITING
 R=Path(__file__).parent
 def stamp():return datetime.datetime.now().astimezone().isoformat(timespec='seconds')
 def save(p,x):
-    q=p.with_suffix(p.suffix+'.tmp');q.write_text(json.dumps(x,ensure_ascii=False,indent=2),encoding='utf-8');os.replace(q,p)
+    import durable_store
+    durable_store.save(p,x)
 def log(msg):
     with (R/'queue.log').open('a',encoding='utf-8') as f:f.write(stamp()+' '+msg+'\n')
 def validate():

@@ -17,4 +17,4 @@ $cfg = Get-Content -LiteralPath $config -Raw -Encoding UTF8 | ConvertFrom-Json
 Start-Process -FilePath (Join-Path $cfg.data_dir '环境检查.html')
 & $Python $entry confirm
 if ($LASTEXITCODE -ne 0) { throw 'Not confirmed.' }
-Write-Host 'Ready. Run: python manage.py web'
+Write-Host 'Ready. Read-only preview: python manage.py dashboard'

@@ -4,9 +4,12 @@ from pathlib import Path
 import json, hashlib, subprocess, os, datetime
 FF=portable_runtime.tool('ffmpeg')
 FP=portable_runtime.tool('ffprobe')
-def read(p,default=None):return json.loads(p.read_text(encoding='utf-8-sig')) if p.exists() else default
+def read(p,default=None):
+ import durable_store
+ return durable_store.read(p,default)
 def save(p,v):
- p.parent.mkdir(parents=True,exist_ok=True);tmp=p.with_suffix('.json.tmp');tmp.write_text(json.dumps(v,ensure_ascii=False,indent=2),encoding='utf-8');os.replace(tmp,p)
+ import durable_store
+ durable_store.save(p,v)
 def command(args):return subprocess.check_output(args,stderr=subprocess.PIPE,creationflags=0x08000000)
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def audio_hash(p):return command([FF,'-v','error','-i',str(p),'-map','0:a:0','-c:a','copy','-f','hash','-hash','sha256','-']).decode().strip()

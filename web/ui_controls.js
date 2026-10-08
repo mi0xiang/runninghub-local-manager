@@ -16,7 +16,9 @@
  const base='http://127.0.0.1:18765';
  const style=document.createElement('style');style.textContent='.hub-panel{background:#173b46;border:1px solid #5b9da9;border-radius:12px;padding:16px 20px;margin:18px 0;color:#eefaff}.hub-panel button,.hub-action{border:1px solid #62b9cd;border-radius:7px;background:#193f4a;color:#e9fbff;padding:9px 14px;margin:6px;cursor:pointer;font-size:14px}.hub-action{float:right}.hub-panel[data-alert="true"]{border-color:#f8b75c;background:#423423}.hub-message{white-space:pre-wrap;font-size:14px}header h2{order:0;flex:1}header .hub-action{order:1;float:none}header span{order:2}.hub-panel small{display:block;color:#bfd0d5}';document.head.append(style);
  const panel=document.createElement('section');panel.className='hub-panel';panel.innerHTML='<strong>本机脚本监测</strong><p id="hub-live" role="status">正在检测本机控制服务…</p><button id="hub-stop">停止本地处理</button><button id="hub-resume">恢复处理</button><button id="hub-notify">开启桌面提醒</button><small>停止后禁止后续上传/提交，并中断本地检测、拼接；已发出的网络请求需等待返回。云端已提交任务不会被取消。停止设置在重启后仍保留。</small><p class="hub-message" id="hub-message" role="status"></p>';
- const main=document.querySelector('main')||document.body;const h1=main.querySelector('h1');if(h1)h1.after(panel);else main.prepend(panel);
+ const main=document.querySelector('main')||document.body;const h1=main.querySelector('h1');
+ const production=cfg.presentation==='comparison'?document.getElementById('production-details'):null;
+ if(production)production.querySelector('summary').after(panel);else if(h1)h1.after(panel);else main.prepend(panel);
  const message=t=>document.getElementById('hub-message').textContent=t;
  async function call(action,data={}){
   const r=await fetch(base+'/api/control',{method:'POST',headers:{'Content-Type':'application/json','X-Hub-Token':cfg.token},body:JSON.stringify({action,...data}),signal:AbortSignal.timeout(20000)});const value=await r.json();if(!r.ok)throw Error(value.error||'操作失败');return value;
@@ -57,19 +59,19 @@
  function filters(options,current,change){const bar=document.createElement('div');bar.setAttribute('role','group');bar.setAttribute('aria-label','状态筛选');for(const [value,label] of options){const b=document.createElement('button');b.textContent=label;b.setAttribute('aria-pressed',String(value===current));b.style.background=value===current?'#287385':'#193f4a';b.onclick=()=>change(value);bar.append(b);}return bar;}
  let homeBar;
  if(!cfg.project){for(const card of document.querySelectorAll('article[data-search]')){const href=card.querySelector('h2 a')?.getAttribute('href')||'';card.dataset.project=card.dataset.project||href.split('/')[1];card.dataset.completed=card.dataset.completed||'0';const history=card.querySelector('p strong')?.parentElement;if(history&&!history.dataset.historyLabel){history.prepend('原始批次记录：');history.dataset.historyLabel='true';}}homeBar=document.createElement('nav');homeBar.className='hub-panel';homeBar.id='hub-project-pagination';homeBar.setAttribute('aria-label','项目分页');main.append(homeBar);document.getElementById('filter')?.addEventListener('input',()=>{homePage=1;applyHome();});}
- function paginate(items,requested){const pages=Math.max(1,Math.ceil(items.length/10)),page=Math.min(pages,Math.max(1,Math.floor(Number(requested)||1)));return {items:items.slice((page-1)*10,page*10),page,pages,total:items.length};}
+ function paginate(items,requested){const pages=Math.max(1,Math.ceil(items.length/30)),page=Math.min(pages,Math.max(1,Math.floor(Number(requested)||1)));return {items:items.slice((page-1)*30,page*30),page,pages,total:items.length};}
 
  function applyHome(){
   if(!homeBar)return;
   const query=(document.getElementById('filter')?.value||'').toLowerCase();
-  const cards=[...document.querySelectorAll('article[data-project]')].map(card=>{const jobs=lastJobs.filter(j=>view.belongs(j,card.dataset.project));if(!jobs.length)jobs.push({id:card.dataset.project,status:Number(card.dataset.completed)>0?'ARCHIVED':'UNKNOWN',submittedAt:card.dataset.updated});return {card,key:view.select(jobs,'all')[0]};});
-  cards.sort((a,b)=>view.compare(a.key,b.key));
+  const cards=[...document.querySelectorAll('article[data-project]')].map(card=>{const jobs=lastJobs.filter(j=>view.belongs(j,card.dataset.project));if(!jobs.length)jobs.push({id:card.dataset.project,status:Number(card.dataset.completed)>0?'ARCHIVED':'UNKNOWN',submittedAt:card.dataset.updated});return {card,key:view.select(jobs,'all')[0],created:Date.parse(card.dataset.created)||0};});
+  cards.sort((a,b)=>b.created-a.created);
   const found=cards.filter(x=>x.card.dataset.search.toLowerCase().includes(query));const result=paginate(found,homePage);homePage=result.page;sessionStorage.setItem('hub-project-page',String(homePage));const shown=new Set(result.items.map(x=>x.card));
   for(const {card,key} of cards){card.hidden=!shown.has(card);let line=card.querySelector('[data-live-project]');if(!line){line=document.createElement('p');line.dataset.liveProject='true';card.querySelector('h2').after(line);}line.textContent=(labels[key.status]||key.status)+' · 队列序号 '+(key.order??'—')+' · 执行时间 '+(key.submittedAt?new Date(key.submittedAt).toLocaleString():'尚未执行');main.append(card);}
-  homeBar.replaceChildren();const info=document.createElement('span');info.textContent=`共 ${result.total} 个项目 · 每页10个 · 第 ${result.page} / ${result.pages} 页`;homeBar.append(info);
+  homeBar.replaceChildren();const info=document.createElement('span');info.textContent=`共 ${result.total} 个项目 · 每页30个 · 第 ${result.page} / ${result.pages} 页`;homeBar.append(info);
   const add=(label,page,disabled=false)=>{const b=document.createElement('button');b.textContent=label;b.disabled=disabled;if(page===homePage)b.setAttribute('aria-current','page');b.onclick=()=>{homePage=page;applyHome();document.querySelector('article[data-project]:not([hidden])')?.scrollIntoView({block:'start'});};homeBar.append(b);};
   add('首页',1,homePage===1);add('上一页',homePage-1,homePage===1);
-  for(let n=Math.max(2,homePage-2);n<=Math.min(result.pages,Math.max(5,homePage+2));n++)add(String(n),n,n===homePage);
+  for(let n=Math.max(1,homePage-2);n<=Math.min(result.pages,Math.max(5,homePage+2));n++)add(String(n),n,n===homePage);
   add('下一页',homePage+1,homePage===result.pages);add('末页',result.pages,homePage===result.pages);
   if(!result.total){const empty=document.createElement('p');empty.textContent='没有匹配的项目，请调整搜索条件。';homeBar.append(empty);}main.append(homeBar);
  }
@@ -90,7 +92,7 @@
   for(const j of issues){const key='queue-notified:'+j.id+':'+j.status+':'+(j.taskId||'');if(!localStorage.getItem(key)){localStorage.setItem(key,'1');if('Notification' in window&&Notification.permission==='granted')new Notification('视频队列需要处理',{body:j.batch+'：'+(j.reason||labels[j.status])});}}
  }catch(e){queuePanel.textContent='队列读取失败：'+e.message;}}
  queueStatus();setInterval(queueStatus,10000);
- const build=element('small','页面版本：20260923-projectpages3 · 已启用按最新版本获取');panel.append(build);
+ const build=element('small','页面版本：20261002-projectorder30 · 已启用按最新版本获取');panel.append(build);
  function updateTiming(){
   const duration=n=>{n=Math.max(0,Math.floor(n));return Math.floor(n/60)+'分'+n%60+'秒';};
   document.querySelectorAll('[data-version-timing]').forEach(el=>{

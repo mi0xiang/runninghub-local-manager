@@ -25,10 +25,14 @@ def signature(approval):
 def scan(root):
  root=root.resolve()
  old=read(root/'queue_state.json',{'jobs':[]});known={j['id']:j for j in old['jobs']};jobs=[];entries=read(root/'projects.json')['projects']
- discovered=[]
+ discovered=[];seen_paths={};duplicate_aliases=[]
  for e in entries:
   folder=(root/e['path']).resolve()
   if not folder.is_relative_to((root/'projects').resolve()):raise ValueError('Project path escape')
+  if folder in seen_paths:
+   duplicate_aliases.append({'project':e['id'],'canonical_project':seen_paths[folder],'previous_jobs':[j for j in old['jobs'] if j.get('project')==e['id']]})
+   continue  # One physical approved batch can enter the account queue only once.
+  seen_paths[folder]=e['id']
   a=read(folder/'approval.json',{});authorized=a.get('status')=='APPROVED' and a.get('submit_permitted') is True and a.get('upload_permitted') is True and e.get('mode')!='archive_only'
   approvals={b['name']:b for b in a.get('approved_batches',[])}
   for index,name in enumerate(read(folder/'batches.json',[])):
@@ -48,11 +52,15 @@ def scan(root):
      if dep:
       if not isinstance(dep,str) or (folder/dep).resolve().parent!=folder:j['blocked']='依赖路径无效'
       elif read(folder/dep/'task_state.json',{}).get('status')!='ARCHIVED':j['blocked']='等待前段下载归档：'+dep
+     if (folder/'execution-plan.json').is_file():
+      import project_runner
+      gate=project_runner.generation_gate(folder,name)
+      if gate:j['blocked']=gate
    if 'order' not in j:discovered.append((a.get('approvedAt') or e.get('updatedAt',''),index,j))
    jobs.append(j)
  order=max([j.get('order',0) for j in known.values()]+[0])
  for _,_,j in sorted(discovered,key=lambda x:(x[0],x[1],x[2]['id'])):order+=1;j['order']=order;j['enqueuedAt']=now()
- snapshot={'updatedAt':now(),'limit':3,'jobs':sorted(jobs,key=lambda j:j['order']),'account':old.get('account',{})}
+ snapshot={'updatedAt':now(),'limit':3,'jobs':sorted(jobs,key=lambda j:j['order']),'account':old.get('account',{}),'duplicate_aliases':duplicate_aliases}
  save(root/'queue_state.json',snapshot);return snapshot
 
 def account(secret):
@@ -74,7 +82,7 @@ def verify(root,j):
   if not f.is_relative_to(d.resolve()) or hashlib.sha256(f.read_bytes()).hexdigest()!=h:raise ValueError('Approved file changed: '+rel)
  return a
 
-def schedule(root,force_project=None):
+def schedule(root,force_project=None,submit=True):
  root=root.resolve()
  import collector,run_approved_queue as submitter
  snapshot=scan(root);secret=None;results=[]
@@ -92,7 +100,7 @@ def schedule(root,force_project=None):
   except Exception as exc:results.append({'batch':j['batch'],'error':type(exc).__name__})
  snapshot=scan(root)
  # Recheck account before each create; local reservation remains authoritative if account lags.
- while True:
+ while submit:
   if not select(snapshot['jobs'],0):break
   try:
    secret=secret or collector.key();external=account(secret);snapshot['account']={'occupied':external,'checkedAt':now()}
@@ -132,6 +140,7 @@ def download(root):
  for j in read(root/'queue_state.json',{'jobs':[]})['jobs']:
   d=root/j['path'];s=read(d/'task_state.json',{})
   if s.get('status') not in ('CLOUD_SUCCEEDED','DOWNLOADING','DOWNLOAD_ERROR'):continue
+  if s.get('integrityBlocked'):continue  # Existing damaged originals require explicit recovery review.
   if s.get('status')=='DOWNLOAD_ERROR' and not due(s,'nextDownloadAt'):continue
   try:
    s.update(status='DOWNLOADING');save(d/'task_state.json',s)

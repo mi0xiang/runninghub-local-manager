@@ -9,9 +9,12 @@ from task_outcomes import counts
 from api_policy import retryable
 R=Path(__file__).resolve().parent
 def now():return datetime.datetime.now().astimezone().isoformat(timespec='seconds')
-def read(p,default=None):return json.loads(p.read_text(encoding='utf-8')) if p.exists() else default
+def read(p,default=None):
+    import durable_store
+    return durable_store.read(p,default)
 def save(p,x):
-    tmp=p.with_suffix(p.suffix+'.tmp');tmp.write_text(json.dumps(x,ensure_ascii=False,indent=2),encoding='utf-8');os.replace(tmp,p)
+    import durable_store
+    durable_store.save(p,x)
 def event(kind,batch='',**data):
     with (R/'events.jsonl').open('a',encoding='utf-8') as f:f.write(json.dumps(dict(time=now(),event=kind,batch=batch,**data),ensure_ascii=False)+'\n')
 BLOCKED={'NEEDS_REVIEW','SUBMITTING_OUTCOME_UNKNOWN','UPLOADING','REJECTED_OR_UNKNOWN','REJECTED','FAILED'}
