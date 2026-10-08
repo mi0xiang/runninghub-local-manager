@@ -2,7 +2,9 @@
 
 Windows 本机视频生成追踪中心。代码可通过 GitHub 更新；任务、参考素材、视频、工作流及运行日志只保存到各电脑自己的数据目录。
 
-这是独立社区工具，并非 RunningHub 或 MiniMax 官方产品。当前为 **0.1.0 初始版**，从已有本地工具抽取。支持空白安装、项目网页、10项分页、队列状态、既有任务查询下载、已批准任务提交和版本管理。云端端到端生成未在此独立版重新验收。
+本轮未发布更新新增只读 `/supervision.html`、交接版本、原件核验及Lark差异协议；部署、围栏启用和本地命令见 [监管与交接说明](docs/supervision-v02.md)。本机后期技术通过仍须人工审核。
+
+这是独立社区工具，并非 RunningHub 或 MiniMax 官方产品。当前代码包含 **0.1.0 之后的未发布更新**，版本标签以 GitHub Releases 为准。支持空白安装、项目网页、30项分页、队列状态、既有任务查询下载、已批准任务提交和版本管理。云端端到端生成未在此独立版重新验收。
 
 ## 快速安装
 
@@ -15,12 +17,14 @@ Windows 本机视频生成追踪中心。代码可通过 GitHub 更新；任务�
 python manage.py init --data-dir 'F:\RunningHubData' --ffmpeg 'F:\ffmpeg\bin\ffmpeg.exe' --ffprobe 'F:\ffmpeg\bin\ffprobe.exe'
 python manage.py doctor
 python manage.py confirm
-python manage.py web
+python manage.py dashboard
 ```
 
 也可以运行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1` 按提示填写。
 
-浏览器打开 `http://127.0.0.1:18765/index.html`。Web 命令会保持前台运行，Ctrl+C 停止服务。仅监听本机回环地址，端口固定18765，不用于公网/局域网部署。环境检查报告位于数据目录 `环境检查.html`。
+浏览器打开 `http://127.0.0.1:18765/supervision.html`。`dashboard` 是只读、手动前台服务，Ctrl+C 停止；浏览页面不启动收片或生成。仅监听本机回环地址，端口固定18765，不用于公网/局域网部署。环境检查报告位于数据目录 `环境检查.html`。
+
+原有 `manage.py web` 仍保留：先渲染历史页面，再启动带操作按钮和每2分钟原任务收片的服务（常规查询从提交满8分钟开始），与只读 `dashboard` 行为不同。`start.ps1` 默认 Web 模式也进入这个原有入口。当前制作采用下文的只读展示与有限收片；是否使用旧入口按所在项目授权决定。
 
 ## 哪些需要填写
 
@@ -34,24 +38,27 @@ python manage.py web
 
 新配置、移动代码目录、移动数据目录或换电脑后需重新 doctor/confirm。修改数据目录前先复制需要保留的数据；本工具不替你同步。空白安装无需复制任何旧数据。API变量缺失时可浏览；FFmpeg缺失时无法完整执行下载归档和合成。报告明确区分必需检查和功能警告。
 
-## 本机后台队列
+## 手动执行与原有队列入口
+
+按 [有限收片说明](docs/project-runner.md)准备准确项目、负责聊天和原 taskId 的选择清单，然后手动执行 `python manage.py watch-results --selection <清单.json>`。达到终态、时长或错误预算后停止；关闭后不继续运行，重启接续原记录。
+
 
 `python manage.py tick` **可能上传素材、提交已批准任务**，不是只读命令。只有经过明确批准的项目进入提交队列。
 
 ```powershell
 # 单次处理
 python manage.py tick
-# 可选：明确输入 START 后注册当前用户每2分钟的本机任务
+# 原有可选能力：只有明确授权定时提交时才使用；当前手动制作流程不启用
 powershell -NoProfile -ExecutionPolicy Bypass -File .\start.ps1 -Mode InstallQueueTask
 ```
 
-计划任务名 `RunningHub-Local-Manager`；删除/禁用此任务可停止定期调度。任务只在用户登录时运行。退出 Codex 不影响已注册调度；退出网页服务不会取消云端任务。账户并发最大3，不应让多台机器同时调度同一个项目的副本。
+安装、打开页面或读取本说明均不授权注册计划任务。若另行明确启用上述旧能力，计划任务名为 `RunningHub-Local-Manager`；删除/禁用此任务可停止定期调度。任务只在用户登录时运行。退出 Codex 不影响已注册调度；退出网页服务不会取消云端任务。账户并发最大3，不应让多台机器同时调度同一个项目的副本。
 
 ## GitHub 更新，不同步结果
 
 仓库仅有程序、说明和测试。`.local/` 被忽略；数据目录强制位于仓库外。不要把本机数据目录提交到 GitHub，不要使用 `git add -f` 绕过忽略规则。
 
-更新前关闭网页服务，禁用 `RunningHub-Local-Manager` 计划任务并确认后台进程结束。备份本机数据与 `.local/config.json`，再执行：
+更新前关闭受影响的网页、收片与队列进程；仅当本机确实安装过 `RunningHub-Local-Manager` 计划任务时禁用它。备份本机数据与 `.local/config.json`，再执行：
 
 ```powershell
 git status --short
@@ -59,7 +66,7 @@ git pull --ff-only
 python -m unittest discover -s tests -v
 python manage.py doctor
 python manage.py confirm
-python manage.py web
+python manage.py dashboard
 ```
 
 有未提交代码修改时，先处理差异，不强制覆盖。先看 CHANGELOG，再决定更新。当前无自动远程更新、自更新服务、遥测或跨机同步；除操作者执行 Git 更新外，生成相关网络调用仅针对 RunningHub 和其输出下载地址。
@@ -71,6 +78,8 @@ python manage.py web
 - `docs/project-format.md`：准备一个本机项目的数据结构。
 - `docs/workflow-rules.md`：H3原生参考节点与修改边界。
 - `docs/local-controls-and-versions.md`：网页、队列、版本操作。
+- `docs/project-runner.md`：全片计划、有限收片、冻结后期与交付登记。
+- `docs/supervision-v02.md`：监督页与可选 Lark 本机目标配置、迁移说明。
 - `docs/publishing.md`：公共仓库发布范围和步骤。
 - `安装指引.html`：不需要编辑器即可查看的简明指引。
 

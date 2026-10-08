@@ -41,4 +41,6 @@ def upload(path,secret):
     with urllib.request.urlopen(req,timeout=90) as r:out=json.load(r)
     if out.get('code')!=0:raise RuntimeError('Upload rejected, code='+str(out.get('code')))
     return out['data']['fileName']
-def save(p,x):p.write_text(json.dumps(x,ensure_ascii=False,indent=2),encoding='utf-8')
+def save(p,x):
+    import durable_store
+    durable_store.save(p,x)

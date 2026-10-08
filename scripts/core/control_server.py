@@ -147,6 +147,10 @@ class Handler(BaseHTTPRequestHandler):
   if not self.host_ok() or not self.valid_origin():return self.respond(403,{'error':'Origin rejected'})
   self.send_common(204);self.end_headers()
  def do_POST(self):
+  if getattr(self.server,'read_only',False):return self.respond(403,{'error':'Read-only preview; actions are disabled'})
+  import durable_store
+  with durable_store.configured_session(ROOT):self._do_POST()
+ def _do_POST(self):
   if not self.host_ok() or not self.valid_origin() or not secrets.compare_digest(self.headers.get('X-Hub-Token',''),token()) or self.headers.get('Content-Type')!='application/json':return self.respond(403,{'error':'Unauthorized local control request'})
   try:
    size=int(self.headers.get('Content-Length','0'))
@@ -220,6 +224,12 @@ class Handler(BaseHTTPRequestHandler):
  def do_GET(self):
   if not self.host_ok():return self.respond(403,{'error':'Invalid host'})
   try:
+   if urlsplit(self.path).path in ('/supervision.html','/api/supervision'):
+    import supervision
+    observed=supervision.snapshot(ROOT)
+    if urlsplit(self.path).path=='/api/supervision':return self.respond(200,observed)
+    payload=supervision.render_panel(observed).encode('utf-8')
+    self.send_common(200,'text/html; charset=utf-8',len(payload));self.end_headers();self.wfile.write(payload);return
    p=static_path(ROOT,self.path)
    if not p.is_file():return self.respond(404,{'error':'File not found'})
    size=p.stat().st_size;start=0;end=size-1;code=200
@@ -251,8 +261,21 @@ class ExclusiveServer(ThreadingHTTPServer):
   if hasattr(socket,'SO_EXCLUSIVEADDRUSE'):self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
   super().server_bind()
 
-def serve():
- token()
+def collection_loop(stopped):
+ """Receive existing task IDs only; never tick/resume the paid queue."""
+ while not stopped.is_set():
+  try:launch('collect-results')
+  except OSError:
+   save(ROOT/'collection_service_status.json',{'state':'ERROR','error':'LaunchError','updatedAt':lc.now()})
+  if stopped.wait(120):return
+
+def serve(read_only=False):
+ if not read_only:token()
  try:server=ExclusiveServer(('127.0.0.1',PORT),Handler)
  except OSError:return
- save(ROOT/'control_service_status.json',{'pid':os.getpid(),'listen':ORIGIN,'startedAt':lc.now()});server.serve_forever()
+ server.read_only=read_only
+ stopped=threading.Event()
+ save(ROOT/'control_service_status.json',{'pid':os.getpid(),'listen':ORIGIN,'startedAt':lc.now(),'collectionOnly':not read_only,'readOnly':read_only,'collectionIntervalSeconds':None if read_only else 120})
+ if not read_only:threading.Thread(target=collection_loop,args=(stopped,),daemon=True).start()
+ try:server.serve_forever()
+ finally:stopped.set();server.server_close()

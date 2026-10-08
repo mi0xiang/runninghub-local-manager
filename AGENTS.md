@@ -1,33 +1,41 @@
 # RunningHub Local Manager · agent rules
 
-Read START_HERE.md before acting. Code root is this file's directory; load `.local/config.json` to locate THIS machine's data root. Never infer a historical drive path. API keys come only from RUNNINGHUB_API_KEY; never print or serialize them.
+Updated 2026-10-08: responsibility and entry-point documentation cleanup. This file governs the shared technical manager. The parent project's rules govern shared boundaries and project tracking; creative plans and skill selection belong to the owning production child and the user; the manager directory is not a film-production child project.
 
-## Local data boundary
-Git contains program code, documentation and synthetic tests only. Projects, workflows, task IDs, approval records, logs, media and control tokens belong outside the repository. Do not copy data into examples/tests, commit `.local`, or force-add ignored files. Public releases must be built from an explicit code file list and inspected before upload. No telemetry, cloud data sync or public server deployment.
+## Start and locate data
 
-## API actions
-New uploads/generation, revised versions and failed reruns require explicit user approval for exact assets/batches/parameters. Setup confirmation is not generation approval. Existing task IDs must be reconciled, never blindly submitted again. Unknown submission outcomes stop automatic generation. Maximum account concurrency3, global FIFO. Retain native approval hashes and original task records.
+Read [START_HERE.md](START_HERE.md) before acting. This directory is the code root; load `.local/config.json` to locate this machine's data root. Use actual project identity and configuration rather than historical drive paths. API keys come only from RUNNINGHUB_API_KEY; never print or serialize them.
 
-Use manage.py / scripts/hub.py as entry points; do not directly invoke legacy core module main functions. tick and UI resume/fetch can advance approved work and are not read-only. No paid/network tests in CI. Confirmation applies only to the current machine, code path and configuration.
+For H3 submission or resumption, read [docs/project-runner.md](docs/project-runner.md) and the applicable parent/child production rules. Retain current local changes when maintaining this repository.
 
-## 工作流 2097955216049131522：每次调用必读（2026-09-28）
+## Responsibilities and completion
 
-准备、修改、重跑或提交该工作流前，先读 [docs/workflow-rules.md](docs/workflow-rules.md)，核对本次原生导出及哈希。**265 的实际参考输入连接是 API 执行图的判定依据**，不能只看界面开关或上传清单。
+The owning child conversation is responsible for its whole film: plan and dependencies, approved execution, original-task receipt, segment/content review, actual-frame continuation, frozen postproduction, full-film review, delivery registration and tracking readback. The supervisor maintains basic rules and tracks cross-project identity, queue/concurrency, omissions, timeouts, blockers and delivery; scripts execute mechanical work and preserve evidence. Creative decisions and content review belong to the owning child.
 
-| 参考类型 | 按顺序使用的加载节点 | 上传返回 fileName 写入 | 265.inputs 中的入口 |
-|---|---|---|---|
-| 图片1–8 | 51、49、50、43、19、23、199、200 | LoadImage.inputs.image | ref_images.ref_image_0…7 |
-| 音频1–3 | 48、14、15 | LoadAudio.inputs.audio | ref_audios.ref_audio_0…2 |
-| 视频1–3 | 27、25、26 | VHS_LoadVideo.inputs.video | ref_videos.ref_video_0…2 |
+Use exact project/version/ownerThreadId. All planned segments can be recorded without approving, enqueuing or submitting unapproved work. Only an accepted complete film registered to the child page/presentation and verified through readback may become review-pending; confirmed requires explicit user acceptance of the exact version/hash. Task IDs, URLs, archived segments and technical checks alone are not whole-film completion.
 
-- 先按用途选择素材：身份图、穿着静帧、产品图等分别列明顺序；仅供分析或后期合入的音视频不作为生成参考。三类独立计数、分别使用前 N 路，提示词引用顺序与清单一致。
-- 开启：保留本次需要的原生加载节点，并让265对应入口连接 `["节点ID", 0]`；获批后逐份上传，将每个返回的fileName绑定到该素材对应的image/audio/video字段，并同步nodeInfoList。
-- 关闭：准备稿中移除265未使用的参考入口，以及仅服务于该参考的未使用加载分支；不上传该路，不用空字符串、None、旧文件名冒充关闭。删除前检查是否还有其他消费者，存在共享连接或与原生基准不符时停下复核，不能误删采样链。
-- 307/308/309为界面图片/音频/视频分组开关；已核实导出的inputs为空。禁止构造它们不存在的API布尔字段；仅修改nodeInfoList的文件名也不等于关闭265连接。
-- 示例：3图+2音频+2视频，仅保留图片51/49/50、音频48/14、视频27/25及265对应入口；其余参考关闭。3图无音视频时，265不得保留任何ref_audios.*、ref_videos.*入口，三个音频和三个视频加载分支都不使用。
-- 提交前逐类检查：素材文件数 = 节点ID数 = 265启用入口数 = 上传绑定数；路径、文件哈希、类别、序号、字段及远端fileName可追溯。数量、顺序或字段不一致必须停止，不能静默截断或复用另一素材的返回值。
-- native_references.configure/verify当前只覆盖音视频原生分支，不代表图片已自动配置或完整三类校验已实现。图片另行准备复核；更多图片节点从已核实的八图原生基准获取，不能凭编号补造。
-- 保留内部音频VAE、解码器、模型、采样、缩放/二采放大及其他连接。所有参考开关差异在批准前保存；批准后只按获批映射写上传返回值，不临时改图。每个新版本/失败重跑仍需具体提交批准；已有taskId不重提。本规则更新不代表云端端到端验证通过。
+## Approved execution and shared state
 
-## Maintenance
-Test modifications in an isolated temporary data directory using RUNNINGHUB_CONFIG_FILE. Never point tests at real project data. Run `python -m unittest discover -s tests -v`, compile Python files, and inspect the public archive. Stop services before changing executable code. Record material changes in CHANGELOG. Existing machine data schema changes require backup and documented migration; updates must never reset records. Keep all service bindings loopback-only.
+New uploads/generation, revised inputs/batches and failed reruns require explicit approval for the exact assets, parameters and counts. Existing approval remains valid within its original scope; setup confirmation is not generation approval. Reconcile existing task IDs and unknown submission outcomes before further generation. Preserve original approvals, hashes, failed/cancelled jobs and task records.
+
+The current account concurrency limit is 3 through the same global FIFO; a later rule change must also reconcile executor configuration and actual account capacity. An owning child with exact batch approval may register and dispatch its project through the established scoped interface. Shared writes use the same process lock and revision/digest checks; preserve other projects, ordering, approval fingerprints and submission counts. Local cross-project assignment records remain on the single coordinator path. Lark business integration is still being defined incrementally by the user: start from the specified video and Lark cell, and do not impose existing adapter fields or writeback as a prerequisite for local production/delivery. Do not create a separate queue or directly overwrite another active child's media, page or approval.
+
+Use manage.py / scripts/hub.py through the verified local entry points, including the scoped adapter when required by the parent project. Do not directly invoke legacy core module main functions. tick and UI resume can submit approved work; fetch-results/collect-results receive existing task IDs only. Check both task scope and page-render side effects before using an entry point. Do not add a billing preflight to approved submission; occupancy reads for concurrency are queue checks.
+
+## Manual finite reception
+
+watch-results is a manually started, finite, foreground, receive-only runner. Closing stops it; restarting resumes durable checkpoints for the same original tasks. It does not upload, create, retry paid generation, wake chats or install services/tasks. The parent project's webpage is manually launched and its supervision dashboard is read-only. Do not infer active services or scheduling authorization from old documentation.
+
+Bind accepted actual frames and evidence before executing segments that depend on prior results. Record missing segments, failures, pending review/approval, owner and next action as durable checkpoints.
+
+## Workflow preparation
+
+New H3 requests must not exceed 15 seconds. The owning child's measured shot/voice plan determines segment boundaries and durations; split at complete phrases and appropriate action states. Record global/segment time and start/end states. Older 10-second defaults and frozen tasks remain historical, not a new-plan requirement; respect a shorter verified workflow limit where applicable.
+
+For workflow 2097955216049131522, read [docs/workflow-rules.md](docs/workflow-rules.md) and verify the actual export/hash. Node 265 controls real reference inputs: bind requested assets and remove unused slots/loader branches. Nodes 307/308/309 are UI group toggles, not API booleans in the verified export. Use actual counts and verified mappings; inactive inputs receive no upload. The bundled helper configures audio/video only; images require separately verified preparation. Check the actual node 265 connections and per-type counts, hashes, order and uploaded file bindings; inspect shared consumers before removing a loader. Save reference changes before approval and preserve internal audio VAE/decoders. Changes to models, sampling, upscale or unrelated wiring require their own approval. Third-party exports need redistribution permission.
+
+## Data and maintenance
+
+Git contains general program code, documentation and synthetic tests only. Machine projects, workflow exports, task IDs, approvals, logs, media, control tokens and real Lark resource identities stay in the configured data root outside this code repository. For optional Lark binding or upgrades, read [docs/supervision-v02.md](docs/supervision-v02.md). Never commit `.local` or force-add ignored business data. No telemetry, cloud data sync or public server deployment; service bindings remain loopback-only.
+
+For executable code changes, stop affected services, test with an isolated temporary data directory via RUNNINGHUB_CONFIG_FILE, run `python -m unittest discover -s tests -v` and compile changed Python files. Never use real project data for tests; no paid/network CI tests. Documentation-only edits require reference/consistency review without production commands. Record material changes in CHANGELOG. Machine data schema changes require backup and documented migration and must not reset records. Public releases use an explicit code file list and inspected archive, following [docs/publishing.md](docs/publishing.md). Machine confirmation applies only to the current code path and configuration.

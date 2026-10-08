@@ -6,11 +6,12 @@ ROOT=portable_runtime.ROOT
 ENABLED=False
 class LocalStop(RuntimeError):pass
 def read(p,default=None):
- try:return json.loads(p.read_text(encoding='utf-8-sig'))
- except FileNotFoundError:return default
+ import durable_store
+ return durable_store.read(p,default)
 
 def save(p,x):
- p.parent.mkdir(parents=True,exist_ok=True);tmp=p.with_name(p.name+'.'+uuid.uuid4().hex+'.tmp');tmp.write_text(json.dumps(x,ensure_ascii=False,indent=2),encoding='utf-8');os.replace(tmp,p)
+ import durable_store
+ durable_store.save(p,x)
 def now():return datetime.datetime.now().astimezone().isoformat(timespec='seconds')
 def paused():return read(ROOT/'local_control.json',{}).get('paused',False)
 def checkpoint():

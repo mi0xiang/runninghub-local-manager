@@ -1,9 +1,12 @@
 """Explicit read-only cloud collection. No upload/submission imports or calls."""
 import json,datetime,os,uuid
 from pathlib import Path
-def read(p,default=None):return json.loads(p.read_text(encoding='utf-8-sig')) if p.exists() else default
+def read(p,default=None):
+ import durable_store
+ return durable_store.read(p,default)
 def save(p,v):
- t=p.with_name(p.name+'.'+uuid.uuid4().hex+'.tmp');t.write_text(json.dumps(v,ensure_ascii=False,indent=2),encoding='utf-8');os.replace(t,p)
+ import durable_store
+ durable_store.save(p,v)
 def fetch(root,pid,collect,key):
  entries=read(root/'projects.json')['projects'];selected=next((e for e in entries if e['id']==pid),None)
  if not selected:raise ValueError('Unknown project')

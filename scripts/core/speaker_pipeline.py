@@ -6,9 +6,12 @@ import local_control
 from api_policy import retryable
 FFMPEG=Path(portable_runtime.tool('ffmpeg')); FFPROBE=Path(portable_runtime.tool('ffprobe'))
 BLOCKED={'FAILED','REJECTED','NEEDS_REVIEW','UPLOADING','SUBMITTING_OUTCOME_UNKNOWN','REJECTED_OR_UNKNOWN'}
-def read(p,default=None):return json.loads(p.read_text(encoding='utf-8-sig')) if p.exists() else default
+def read(p,default=None):
+ import durable_store
+ return durable_store.read(p,default)
 def save(p,x):
- p.parent.mkdir(parents=True,exist_ok=True); tmp=p.with_suffix(p.suffix+'.tmp');tmp.write_text(json.dumps(x,ensure_ascii=False,indent=2),encoding='utf-8');os.replace(tmp,p)
+ import durable_store
+ durable_store.save(p,x)
 def sha(p):
  h=hashlib.sha256()
  with p.open('rb') as f:
