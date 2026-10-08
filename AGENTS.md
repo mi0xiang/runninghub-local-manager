@@ -8,6 +8,8 @@ Read [START_HERE.md](START_HERE.md) before acting. This directory is the code ro
 
 For H3 submission or resumption, read [docs/project-runner.md](docs/project-runner.md) and the applicable parent/child production rules. Retain current local changes when maintaining this repository.
 
+For missing parent/child guidance or cross-machine adaptation, use [the public guidance kit](templates/project-guidance/README.md). Keep real project sources and machine bindings in its private local context. When changing rules, follow the template's downstream documents and existing project-specific references together; do not export local AGENTS or business guides wholesale. Same-account computers need one dispatcher or a verified shared coordinator; local file locks do not coordinate independent machines.
+
 ## Responsibilities and completion
 
 The owning child conversation is responsible for its whole film: plan and dependencies, approved execution, original-task receipt, segment/content review, actual-frame continuation, frozen postproduction, full-film review, delivery registration and tracking readback. The supervisor maintains basic rules and tracks cross-project identity, queue/concurrency, omissions, timeouts, blockers and delivery; scripts execute mechanical work and preserve evidence. Creative decisions and content review belong to the owning child.

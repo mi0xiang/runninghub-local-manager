@@ -135,8 +135,8 @@ class LocalBindingTests(unittest.TestCase):
     def test_local_binding_selects_target_and_still_rejects_wrong_table_or_fields(self):
         item,snap=fixture()
         snap['target']={'base_token':'syntheticBase','table_id':'tblSynthetic','view_id':'vewSynthetic'}
-        snap['fields'][0]['field_id']='fldStageSynthetic'
-        snap['fields'][1]['field_id']='fldTaskSynthetic'
+        snap['fields'][0]['field_id']='fldOtherStageFixture'
+        snap['fields'][1]['field_id']='fldOtherTaskFixture'
         config={'schema_version':1,'target':snap['target'],
                 'fields':{f['field_name']:{'field_id':f['field_id'],'type':f['type']} for f in snap['fields']}}
         with tempfile.TemporaryDirectory() as td:

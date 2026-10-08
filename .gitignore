@@ -1,5 +1,7 @@
 # Machine-only configuration. Never force-add these exclusions.
 /.local/
+/.project-local/
+/RunningHubData/
 /projects/
 /workflow_baselines/
 /data/

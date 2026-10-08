@@ -8,6 +8,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Inspect public tracked content
+        run: python scripts/check_public_tree.py
       - name: Install media test tools
         run: choco install ffmpeg --yes --no-progress
       - name: Run offline tests with isolated configuration

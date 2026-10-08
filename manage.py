@@ -7,7 +7,7 @@ import portable_runtime as rt
 def doctor():
  cfg=rt.load();checks=[]
  def add(name,ok,detail,required=True):checks.append(dict(name=name,ok=bool(ok),detail=detail,required=required))
- add('Windows Python ≥3.10',os.name=='nt' and sys.version_info>=(3,10),sys.executable)
+ add('Windows Python ≥3.12',os.name=='nt' and sys.version_info>=(3,12),sys.executable)
  add('初始化配置',bool(cfg),'运行 manage.py init 指定本机数据目录')
  try:
   rt.validate_data_dir(rt.ROOT)

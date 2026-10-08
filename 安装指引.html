@@ -1,7 +1,7 @@
 <!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RunningHub Local Manager · 安装指引</title><style>body{margin:0;background:#0b1b25;color:#e6f0f5;font:16px/1.8 system-ui}main{max-width:1040px;margin:auto;padding:40px 24px}h1{font-size:34px}h2{color:#7ddce7;margin-top:32px}.box{padding:20px;background:#16313e;border:1px solid #355665;border-radius:12px;margin:18px 0}code,pre{background:#203c49;color:#bcf0ef}pre{padding:18px;white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%}td,th{padding:10px;text-align:left;border-bottom:1px solid #355665}a{color:#8de4f4}li{margin:8px 0}</style><main>
-<h1>RunningHub Local Manager</h1><p>0.1.0 后续更新（未发布）· Windows 空白安装 · GitHub 更新程序，本机保存结果</p>
+<h1>RunningHub Local Manager</h1><p>0.1.0 后续源码更新 · Windows 空白安装 · GitHub 更新程序与指引模板，本机保存结果</p>
 <div class="box"><b>代码与数据分开。</b>此包没有任何历史项目、素材、任务记录、API Key 或个人工作流。不会自动同步到其他电脑，不会在安装时生成视频。</div>
-<h2>1．准备环境</h2><p>安装 Windows Python 3.10+。需要下载校验或视频合成时安装 FFmpeg（包含 ffprobe）。将程序解压到任意盘，例如 F:\Apps\runninghub-local-manager；将数据另放在 F:\RunningHubData。</p>
+<h2>1．准备环境</h2><p>安装 Windows Python 3.12+。需要下载校验或视频合成时安装 FFmpeg（包含 ffprobe）。将程序解压到任意盘，例如 F:\Apps\runninghub-local-manager；将数据另放在 F:\RunningHubData。</p>
 <h2>2．填写本机配置</h2><table><tr><th>填写项</th><th>说明</th></tr><tr><td>data-dir</td><td>必须在程序目录之外，支持其他盘</td></tr><tr><td>Python</td><td>初始化自动记住当前解释器</td></tr><tr><td>ffmpeg / ffprobe</td><td>各填完整 exe 路径；已配置 PATH 可直接使用命令名</td></tr><tr><td>RUNNINGHUB_API_KEY</td><td>仅在新电脑的 Windows 用户环境变量中填写；不要放入文件或 GitHub</td></tr><tr><td>端口</td><td>固定127.0.0.1:18765，仅供本机使用</td></tr></table>
 <p>进入程序文件夹打开 PowerShell，运行：</p><pre>python manage.py init --data-dir 'F:\RunningHubData' --ffmpeg 'F:\ffmpeg\bin\ffmpeg.exe' --ffprobe 'F:\ffmpeg\bin\ffprobe.exe'
 python manage.py doctor
@@ -11,6 +11,7 @@ python manage.py dashboard</pre>
 <h2>3．打开网页</h2><p><a href="http://127.0.0.1:18765/supervision.html">打开本机项目管理页</a>。初始没有项目；由操作者或 Codex 按 docs/project-format.md 准备素材与工作流，经明确批准后才能进入生成队列。</p><p>dashboard 是手动前台只读服务，浏览不查询、上传或提交；Ctrl+C关闭服务。不要在已有中心占用18765端口时同时启动第二套服务。</p>
 <h2>4．手动收片与 GitHub 更新</h2><p>按 docs/project-runner.md 准备准确选择清单后，手动运行 watch-results，达到原任务终态、时长或错误预算后停止。python manage.py tick 会推进已批准任务，可能上传和生成。原有 web、start.ps1 默认 Web 模式及 InstallQueueTask 仍保留；web 会渲染历史页并周期收片，计划任务会周期提交获批工作。它们需要相应授权，当前手动制作流程不启用系统任务。</p>
 <p>更新代码前停止网页和队列、备份本机数据，运行 git pull --ff-only，再运行测试和环境检查。不需要将视频、项目或配置提交到 GitHub。当前不提供无人值守自动更新。</p>
+<p>总项目、子项目及下游指引模板在 <a href="templates/project-guidance/README.md">templates/project-guidance/README.md</a>，随Git更新。按本机项目安装或合并，已有规则不强制覆盖；实际来源、商品资料和路径保留在项目的 .project-local 私有上下文中。同账户跨机明确唯一调度端，3并发不是每台电脑各3个。</p>
 <h2>给新对话的接手指令</h2><pre>请阅读本程序目录中的 AGENTS.md、START_HERE.md 和 README.md。
 从 .local/config.json 定位本机数据目录，读取 projects.json 选择项目。
 先核对批准记录、原 taskId 与现有成片，不重提已有任务。

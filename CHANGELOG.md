@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-08 — Portable guidance and publication checks
+
+- Add a public parent/child guidance kit covering responsibility, replica intake, optional audio/visual checks, page scope and conditional H3 execution. Keep creative methods and skill selection with the owning project; local business exceptions stay private.
+- Add preview-first installation outside the manager repository. Explicit file allowlisting and hash-based update checks preserve existing/customized rules and private context; conflicting updates write nothing. Templates and their downstream links travel with Git, while local paths, sources, assets and approvals do not.
+- Check actual Git index bytes for publication paths, binaries and common private/credential patterns before publishing and in CI. Matches report locations without disclosing values; manual archive review remains necessary.
+- Document one shared account concurrency limit across machines and local adaptation after pulling. No data/queue migration, generation, Lark writes or services are started by template installation.
+- Align the documented and doctor Python minimum to 3.12, matching existing source syntax, template path checks and Windows CI.
+
 ## Unreleased — 2026-10-08 publication cleanup
 
 - Reconcile upstream native-reference documentation with the branch-owned runner, supervision and frozen postproduction updates.
